@@ -1,10 +1,14 @@
 import heuristics
-import 
+
 
 # @abstract Player Class Template
 class Player:
     def __init__(self, workers, color, type) -> None:
+        self.__workers = workers
         pass
+
+    def has_worker(self, worker):
+        return worker in self.__workers
 
     def move():
         pass
