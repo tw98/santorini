@@ -1,5 +1,6 @@
 import heuristics
 from board import Board
+import random
 
 class Move:
     def __init__(self, worker, move_direction, build_direction, is_human=False) -> None:
@@ -19,6 +20,9 @@ class Player:
         return worker in self.workers
 
     def make_move(self, board):
+        # get valid moves for all workers of players
+        # save in dict and let player choose accordingly
+
         worker = self._get_worker(board)
         mv_d = self._get_move_direction(board, worker)
 
@@ -32,10 +36,10 @@ class Player:
     def _get_worker(self, board):
         raise NotImplementedError
     
-    def _get_move_direction(self,board):
+    def _get_move_direction(self,board, worker):
         raise NotImplementedError
 
-    def _get_build_direction(self, board):
+    def _get_build_direction(self, board, worker):
         raise NotImplementedError
 
 
@@ -92,19 +96,24 @@ class HumanPlayer(Player):
             else:
                 print("Cannot build {0}".format(choice))
     
-
+###
+# GET STUCK IF PLAYER CHOOSES PLAYER WITHOUT VALID MOVES 
+# WHILE OTHER PLAYER STILL HAS VALID MOVES
+###
 class RandomPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(RandomPlayer, self).__init__(workers, color)
 
     def _get_worker(self, board):
-        pass
+        return random.choice(self.workers)
 
-    def _get_move_direction(self, board):
-        pass
+    def _get_move_direction(self, board, worker):
+        valid_moves = board.get_valid_moves(worker)
+        return random.choice(valid_moves)
 
-    def _get_build_direction(self, board):
-        pass
+    def _get_build_direction(self, board, worker):
+        valid_builds = board.get_valid_builds(worker)
+        return random.choice(valid_builds)
 
 class HeurisitcsPlayer(Player):
     def __init__(self, workers, color) -> None:
@@ -113,9 +122,9 @@ class HeurisitcsPlayer(Player):
     def _get_worker(self, board):
         pass
 
-    def _get_move_direction(self, board):
+    def _get_move_direction(self, board, worker):
         pass
 
-    def _get_build_direction(self, board):
+    def _get_build_direction(self, board, worker):
         pass
 

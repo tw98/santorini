@@ -1,9 +1,8 @@
 from players import PlayerFactory
 from board import Board
-import sys
 
 class GameEngine:
-    def __init__(self, player1_type, player2_type, redo, enable_score) -> None:
+    def __init__(self, player1_type, player2_type, undo_redo, enable_score) -> None:
         self._turn = 1
         self._history = {}
         player_factory = PlayerFactory()
@@ -63,13 +62,5 @@ class GameEngine:
             # # self.save_move(move)
 
             self.increment_turn()
-            
-if __name__ == "__main__":
-    player1_type = 'human'
-    player2_type = 'human'
-    redo = 'off'
-    enable_score = 'off'
-
-    env = GameEngine(player1_type, player2_type, redo, enable_score)
-    env.run()
+        
 
