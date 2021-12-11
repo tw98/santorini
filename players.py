@@ -19,15 +19,19 @@ class Player:
     def has_worker(self, worker):
         return worker in self.workers
 
-    def make_move(self, board):
-        # get valid moves for all workers of players
-        # save in dict and let player choose accordingly
+    def player_move_actions(self, board):
+        moves_dict = {}
+        for worker in self.workers:
+            valid_moves = board.get_valid_moves(worker)
+            if valid_moves:
+                moves_dict[worker] = valid_moves
+        return moves_dict
 
-        worker = self._get_worker(board)
-        mv_d = self._get_move_direction(board, worker)
+    def make_move(self, board):
+        worker, mv_d = self._get_worker_move(board)
 
         board.move_worker(worker, mv_d)
-        board.display()
+       
         build_d = self._get_build_direction(board, worker)
 
         board.increment_building_height(worker, build_d)
@@ -63,28 +67,39 @@ class HumanPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(HumanPlayer, self).__init__(workers, color)
 
-    def _get_worker(self, board):
+    def _get_worker_move(self, board):
+        valid_moves_dict = self.player_move_actions(board)
+        
+        # pick worker
         while True:
-            choice = input("Select a worker to move\n")
+            choice_worker = input("Select a worker to move\n")
 
-            player_has_worker = self.has_worker(choice)
+            player_has_worker = self.has_worker(choice_worker)
             if player_has_worker:
-                return choice
+                if choice_worker in valid_moves_dict[choice_worker]:
+                    # valid worker
+                    break
+                else:
+                    print("Worker has no valid moves")
             else:
-                if choice in board.get_all_workers_in_game():
+                if choice_worker in board.get_all_workers_in_game():
                     print("That is not your worker")
                 else:
                     print("Not a valid worker")
-    
-    def _get_move_direction(self, board, worker):
+
+        # pick direction
         while True:
-            choice = input("Select a direction to move (n, ne, e, se, s, sw, w, nw)\n")
-            if choice not in DIRECTIONS:
+            choice_direction = input("Select a direction to move (n, ne, e, se, s, sw, w, nw)\n")
+            if choice_direction not in DIRECTIONS:
                 print("Not a valid direction")
-            elif board.is_valid_move_direction(choice, worker):
-                return choice
+
+            elif choice_direction in valid_moves_dict[choice_worker]:
+                # board.is_valid_move_direction(choice_direction, choice_worker):
+                break
             else:
-                print("Cannot move {0}".format(choice))
+                print("Cannot move {0}".format(choice_direction))
+        
+        return choice_worker, choice_direction
 
     def _get_build_direction(self, board, worker):
         while True:
@@ -104,12 +119,13 @@ class RandomPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(RandomPlayer, self).__init__(workers, color)
 
-    def _get_worker(self, board):
-        return random.choice(self.workers)
+    def _get_worker_move(self, board):
+        moves_dict = self.player_move_actions(board)
 
-    def _get_move_direction(self, board, worker):
-        valid_moves = board.get_valid_moves(worker)
-        return random.choice(valid_moves)
+        valid_workers = list(moves_dict.keys())
+        worker = random.choice(valid_workers)
+
+        return worker, random.choice(moves_dict[worker])
 
     def _get_build_direction(self, board, worker):
         valid_builds = board.get_valid_builds(worker)
@@ -119,10 +135,7 @@ class HeurisitcsPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(HeurisitcsPlayer, self).__init__(workers, color)
 
-    def _get_worker(self, board):
-        pass
-
-    def _get_move_direction(self, board, worker):
+    def _get_worker_move(self, board):
         pass
 
     def _get_build_direction(self, board, worker):

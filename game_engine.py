@@ -35,6 +35,22 @@ class GameEngine:
         self._turn += 1
 
     def _game_is_over(self):
+        # game winning position
+        winning_worker = self.board.check_game_winning_position()
+        if winning_worker:
+            
+            for player in self._players:
+                if winning_worker in player.workers:
+                    print(f'{player.color} has won')
+                    return True
+            print('ERROR: should never get here')
+
+        # check if current player doesn't have any actions to move
+        if (self._current_player) and (not self._current_player.player_move_actions(self.board)):
+            # if True, opponent player won the game
+            print(f'{self._players[self._turn%2].color} has won')
+            return True
+
         return False
 
     def display_current_game_state(self):
@@ -49,12 +65,13 @@ class GameEngine:
     def run(self):
         self.set_starting_postion()
 
-        while (not self._game_is_over()):
-            # self._undo_move():
-            
+        while (True):
             self._current_player = self._players[(self._turn-1) % 2]
 
             self.display_current_game_state()
+
+            if self._game_is_over():
+                break
 
             move = self._current_player.make_move(self.board)
             # self.board.update_worker_position(worker, mv_d)
