@@ -145,3 +145,8 @@ class Board:
         col = self.moves_directions[direction][1]
 
         self._board[cur_row+row][cur_col+col][0] += 1
+
+
+    def get_building_height_of_worker(self, worker):
+        cur_row, cur_col = self._worker_positions[worker]
+        return self._board[cur_row][cur_col][0]
