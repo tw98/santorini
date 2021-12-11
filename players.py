@@ -3,11 +3,22 @@ from board import Board
 import random
 
 class Move:
-    def __init__(self, worker, move_direction, build_direction, is_human=False) -> None:
+    def __init__(self, worker, move_direction, build_direction) -> None:
         self.worker = worker
         self.move_direction = move_direction
         self.build_direction = build_direction
-        self.human_move = is_human
+
+    def reverse(self):
+        reverse_dir = {
+            'n': 's', 'ne': 'sw', 'e': 'w', 'se': 'nw', 
+            's': 'n', 'sw': 'ne', 'w': 'e', 'nw': 'se'
+            }
+
+        reverse_mov_d = reverse_dir[self.move_direction]
+        reverse_build_d = reverse_dir[self.build_direction]
+        
+        return self.worker, reverse_mov_d, reverse_build_d
+
 
 DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
 
