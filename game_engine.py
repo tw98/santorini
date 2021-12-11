@@ -21,24 +21,30 @@ class GameEngine:
 
         self._current_player = None
 
-    def set_starting_postion(self):
-        player1_worker1 = self._players[0].workers[0]
-        self.board.set_worker_position(player1_worker1, 3, 1)
-        player1_worker2 = self._players[0].workers[1]
-        self.board.set_worker_position(player1_worker2, 1, 3)
-        player2_worker1 = self._players[1].workers[0]
-        self.board.set_worker_position(player2_worker1, 1, 1)
-        player2_worker2 = self._players[1].workers[1]
-        self.board.set_worker_position(player2_worker2, 3, 3)
+        # game settings
+        self._undo_redo = undo_redo
+        self._enable_score = enable_score
 
-    def increment_turn(self):
+    def _setup(self):
+        '''
+        Set starting positions of each player's pieces on the board
+        '''
+        player1_worker1 = self._players[0].workers[0]
+        player1_worker2 = self._players[0].workers[1]
+        player2_worker1 = self._players[1].workers[0]
+        player2_worker2 = self._players[1].workers[1]
+        self.board.setup(player1_worker1, player1_worker2, player2_worker1, player2_worker2)
+
+    def _increment_turn(self):
         self._turn += 1
 
     def _game_is_over(self):
+        '''
+        Check to see if the game is over according to game rules
+        '''
         # game winning position
         winning_worker = self.board.check_game_winning_position()
         if winning_worker:
-            
             for player in self._players:
                 if winning_worker in player.workers:
                     print(f'{player.color} has won')
@@ -53,7 +59,10 @@ class GameEngine:
 
         return False
 
-    def display_current_game_state(self):
+    def _display_current_game_state(self):
+        '''
+        Display the current state of the board, turn number, and player turn
+        '''
         self.board.display()
         color = self._current_player.color
         workers = ''.join(self._current_player.workers)
@@ -62,22 +71,25 @@ class GameEngine:
     def _undo_move(self):
         return False
 
+    def _redo_move(self):
+        return False
+
     def run(self):
-        self.set_starting_postion()
+        self._setup()
 
         while (True):
             self._current_player = self._players[(self._turn-1) % 2]
 
-            self.display_current_game_state()
+            self._display_current_game_state()
 
             if self._game_is_over():
                 break
 
             move = self._current_player.make_move(self.board)
+            
             # self.board.update_worker_position(worker, mv_d)
             # self._current_player.bu
             # # self.save_move(move)
 
-            self.increment_turn()
+            self._increment_turn()
         
-

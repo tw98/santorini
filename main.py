@@ -12,5 +12,7 @@ if __name__ == "__main__":
 
     print(args)
 
+    # check args here?
+
     env = GameEngine(args.p1_type, args.p2_type, args.undo_redo, args.enable_score)
     env.run()

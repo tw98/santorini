@@ -1,6 +1,8 @@
 import heuristics
-from board import Board
 import random
+
+DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+
 
 class Move:
     def __init__(self, worker, move_direction, build_direction, is_human=False) -> None:
@@ -9,9 +11,14 @@ class Move:
         self.build_direction = build_direction
         self.human_move = is_human
 
-DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+
+######### Player class & subclasses #########
 
 class Player:
+    '''
+    DESIGN PATTERN: TEMPLATE
+    '''
+
     def __init__(self, workers, color) -> None:
         self.workers = workers
         self.color = color
@@ -21,6 +28,10 @@ class Player:
         return worker in self.workers
 
     def player_move_actions(self, board):
+        '''
+        Gets a list of valid moves for each of the player's worker,
+        according to the current board state
+        '''
         moves_dict = {}
         for worker in self.workers:
             valid_moves = board.get_valid_moves(worker)
@@ -29,24 +40,27 @@ class Player:
         return moves_dict
 
     def make_move(self, board):
+        '''
+        Sequence of actions:
+        1. Get player's choice of what worker to move where
+        2. Update the board with the valid choices
+        3. Get player's choice of where to build
+        4. Update the baord with the valid choice
+        '''
+        
         worker, mv_d = self._get_worker_move(board)
-
         board.move_worker(worker, mv_d)
-       
         build_d = self._get_build_direction(board, worker)
-
         board.increment_building_height(worker, build_d)
 
+        # debugging
         if self.report_move_summary:
             print(f'{worker},{mv_d},{build_d}')
         return Move(worker, mv_d, build_d)
 
-    def _get_worker(self, board):
+    def _get_worker_move(self, board):
         raise NotImplementedError
     
-    def _get_move_direction(self,board, worker):
-        raise NotImplementedError
-
     def _get_build_direction(self, board, worker):
         raise NotImplementedError
 
@@ -72,7 +86,29 @@ class HumanPlayer(Player):
         super(HumanPlayer, self).__init__(workers, color)
         self.report_move_summary = False
 
+    # def is_valid_move_direction(self, d, board, worker):
+    #     '''
+    #     Check that the given direction is valid for the given worker to move
+    #     Use case: Human
+    #     '''
+    #     if d in board.get_valid_moves(worker):
+    #         return True
+    #     return False
+
+    def _is_valid_build_direction(self, d, board, worker):
+        '''
+        Check that the given direction is valid for the given worker to build
+        Use case: Human
+        '''
+        if d in board.get_valid_builds(worker):
+            return True
+        return False
+
     def _get_worker_move(self, board):
+        '''
+        Pick a valid worker to move and a valid direction to move in.
+        Repeats prompts until input is valid.
+        '''
         valid_moves_dict = self.player_move_actions(board)
         
         # pick worker
@@ -81,7 +117,7 @@ class HumanPlayer(Player):
 
             player_has_worker = self.has_worker(choice_worker)
             if player_has_worker:
-                if choice_worker in valid_moves_dict[choice_worker]:
+                if choice_worker in valid_moves_dict:
                     # valid worker
                     break
                 else:
@@ -107,15 +143,20 @@ class HumanPlayer(Player):
         return choice_worker, choice_direction
 
     def _get_build_direction(self, board, worker):
+        '''
+        Pick a valid direction to build in.
+        Repeats prompts until input is valid.
+        '''
         while True:
             choice = input("Select a direction to build (n, ne, e, se, s, sw, w, nw)\n")
             if choice not in DIRECTIONS:
                 print("Not a valid direction")
-            elif board.is_valid_build_direction(choice, worker):
+            elif self._is_valid_build_direction(choice, board, worker):
                 return choice
             else:
                 print("Cannot build {0}".format(choice))
     
+
 ###
 # GET STUCK IF PLAYER CHOOSES PLAYER WITHOUT VALID MOVES 
 # WHILE OTHER PLAYER STILL HAS VALID MOVES
@@ -125,6 +166,10 @@ class RandomPlayer(Player):
         super(RandomPlayer, self).__init__(workers, color)
 
     def _get_worker_move(self, board):
+        '''
+        Pick a valid worker to move and a valid direction to move in.
+        Picks randomly among computed valid choices.
+        '''
         moves_dict = self.player_move_actions(board)
 
         valid_workers = list(moves_dict.keys())
@@ -133,8 +178,13 @@ class RandomPlayer(Player):
         return worker, random.choice(moves_dict[worker])
 
     def _get_build_direction(self, board, worker):
+        '''
+        Pick a valid direction to build in.
+        Picks randomly among computed valid choices.
+        '''
         valid_builds = board.get_valid_builds(worker)
         return random.choice(valid_builds)
+
 
 class HeurisitcsPlayer(Player):
     def __init__(self, workers, color) -> None:
