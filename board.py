@@ -1,14 +1,10 @@
 class Board:
     def __init__(self):
-        self.n_rows = 5
-        self.n_cols = 5
-        self._board = []
-        for row in range(self.n_rows):
-            row = []
-            for col in range(self.n_cols):
-                row.append([0, None])
-            self._board.append(row)
+        self._n_rows = 5
+        self._n_cols = 5
+        self._board = [[[0, None] for j in range(self._n_cols)] for i in range(self._n_rows)]
 
+        # store the positions (row, col) of each worker on the board
         self._worker_positions = {}
 
         self.direction_vectors = {
@@ -22,7 +18,19 @@ class Board:
             'nw': (-1, -1),
         }
 
+    def setup(self, p1_w1, p1_w2, p2_w1, p2_w2):
+        '''
+        Set up the board
+        '''
+        self._set_worker_position(p1_w1, 3, 1)
+        self._set_worker_position(p1_w2, 1, 3)
+        self._set_worker_position(p2_w1, 1, 1)
+        self._set_worker_position(p2_w2, 3, 3)
+
     def get_all_workers_in_game(self):
+        '''
+        Return all names of workers on the board
+        '''
         return list(self._worker_positions.keys())
 
     def get_worker_position(self, worker):
@@ -34,7 +42,7 @@ class Board:
             self._board[row][col][1] = worker
             self._worker_positions[worker] = (row, col)
         else:
-            # normal update: 
+            # normal update
             # free current position
             cur_row, cur_col = self.get_worker_position(worker)
             self._board[cur_row][cur_col][1] = None
@@ -43,6 +51,10 @@ class Board:
             self._worker_positions[worker] = (cur_row+row, cur_col+col)
 
     def check_game_winning_position(self):
+        '''
+        Check all workers for a winning position (i.e. some worker on a building
+        of height 3)
+        '''
         for worker in self._worker_positions:
             row, col = self._worker_positions[worker]
             if self._board[row][col][0] >= 3:
@@ -50,13 +62,15 @@ class Board:
         return None
 
     def display(self):
+        '''
+        Display the board's current state
+        '''
         separator = '+--+--+--+--+--+'
         print(separator)
         for row in self._board:
             row_str = []
             for elt in row:
-                elt_str = '|'
-                elt_str += str(elt[0])
+                elt_str = '|' + str(elt[0])
                 if elt[1]:
                     elt_str += elt[1]
                 else:
@@ -65,17 +79,11 @@ class Board:
             print(''.join(row_str) + '|')
             print(separator)
 
-    def is_valid_move_direction(self, d, worker):
-        if d in self.get_valid_moves(worker):
-            return True
-        return False
-
-    def is_valid_build_direction(self, d, worker):
-        if d in self.get_valid_builds(worker):
-            return True
-        return False
-
     def get_valid_moves(self, worker):
+        '''
+        Returns a list of valid directions for some worker to move in
+        according to current game state
+        '''
         valid_moves = []
         cur_row, cur_col = self.get_worker_position(worker)
         cur_height = self._board[cur_row][cur_col][0]
@@ -85,9 +93,9 @@ class Board:
             next_col = cur_col + self.direction_vectors[d][1]
 
             # check within board dimensionality
-            if next_row < 0 or next_row >= self.n_rows:
+            if next_row < 0 or next_row >= self._n_rows:
                 continue
-            if next_col < 0 or next_col >= self.n_cols:
+            if next_col < 0 or next_col >= self._n_cols:
                 continue
 
             # check height constraints
@@ -110,6 +118,10 @@ class Board:
         return valid_moves
 
     def get_valid_builds(self, worker):
+        '''
+        Returns a list of valid directions for some worker to build in
+        according to current game state
+        '''
         valid_builds = []
         cur_row, cur_col = self.get_worker_position(worker)
         
@@ -118,9 +130,9 @@ class Board:
             next_col = cur_col + self.direction_vectors[d][1]
 
             # check within board dimensionality
-            if next_row < 0 or next_row >= self.n_rows:
+            if next_row < 0 or next_row >= self._n_rows:
                 continue
-            if next_col < 0 or next_col >= self.n_cols:
+            if next_col < 0 or next_col >= self._n_cols:
                 continue
 
             # check worker occupancy
@@ -140,7 +152,7 @@ class Board:
         row = self.direction_vectors[direction][0]
         col = self.direction_vectors[direction][1]
 
-        self.set_worker_position(worker, row, col)
+        self._set_worker_position(worker, row, col)
 
     def increment_building_height(self, worker, direction):
         cur_row, cur_col = self.get_worker_position(worker)
