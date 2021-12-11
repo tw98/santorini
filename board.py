@@ -39,6 +39,12 @@ class Board:
             self._board[cur_row+row][cur_col+col][1] = worker
             self._worker_positions[worker] = (cur_row+row, cur_col+col)
 
+    def check_game_winning_position(self):
+        for worker in self._worker_positions:
+            row, col = self._worker_positions[worker]
+            if self._board[row][col][0] >= 3:
+                return worker
+        return None
 
     def display(self):
         separator = '+--+--+--+--+--+'
@@ -123,7 +129,7 @@ class Board:
             next_height = self._board[next_row][next_col][0]
             if next_height >= 4:
                 continue
-            
+
             valid_builds.append(d)
         return valid_builds
 
