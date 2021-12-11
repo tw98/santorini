@@ -15,6 +15,7 @@ class Player:
     def __init__(self, workers, color) -> None:
         self.workers = workers
         self.color = color
+        self.report_move_summary = True
 
     def has_worker(self, worker):
         return worker in self.workers
@@ -35,6 +36,9 @@ class Player:
         build_d = self._get_build_direction(board, worker)
 
         board.increment_building_height(worker, build_d)
+
+        if self.report_move_summary:
+            print(f'{worker},{mv_d},{build_d}')
         return Move(worker, mv_d, build_d)
 
     def _get_worker(self, board):
@@ -66,6 +70,7 @@ class PlayerFactory():
 class HumanPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(HumanPlayer, self).__init__(workers, color)
+        self.report_move_summary = False
 
     def _get_worker_move(self, board):
         valid_moves_dict = self.player_move_actions(board)
