@@ -1,44 +1,6 @@
 import heuristics
 import random
-
-DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
-
-
-class MoveUtil:
-    def __init__(self, worker, move_direction) -> None:
-        self.worker = worker
-        self.move_direction = move_direction
-        # self.build_direction = build_direction
-
-    def reverse_move(self):
-        reverse_dir = {
-            'n': 's', 'ne': 'sw', 'e': 'w', 'se': 'nw', 
-            's': 'n', 'sw': 'ne', 'w': 'e', 'nw': 'se'
-            }
-
-        reverse_mov_d = reverse_dir[self.move_direction]
-        # reverse_build_d = reverse_dir[self.build_direction]
-        
-        return reverse_mov_d #, reverse_build_d
-
-class Move:
-    def __init__(self, worker, move_direction, build_direction) -> None:
-        self.worker = worker
-        self.move_direction = move_direction
-        self.build_direction = build_direction
-
-    def reverse_move(self):
-        reverse_dir = {
-            'n': 's', 'ne': 'sw', 'e': 'w', 'se': 'nw', 
-            's': 'n', 'sw': 'ne', 'w': 'e', 'nw': 'se'
-            }
-
-        reverse_mov_d = reverse_dir[self.move_direction]
-        reverse_build_d = reverse_dir[self.build_direction]
-        
-        return reverse_mov_d, reverse_build_d
-
-######### Player class & subclasses #########
+from utils import DIRECTIONS, reverse_direction
 
 class Player:
     '''
@@ -65,6 +27,7 @@ class Player:
                 moves_dict[worker] = valid_moves
         return moves_dict
 
+
     def make_move(self, board):
         '''
         Sequence of actions:
@@ -82,7 +45,7 @@ class Player:
         # print move summary if non-human player
         if self.report_move_summary:
             print(f'{worker},{mv_d},{build_d}')
-        return Move(worker, mv_d, build_d)
+        return (worker, mv_d, build_d)
 
     def _get_worker_move(self, board):
         raise NotImplementedError
@@ -216,6 +179,9 @@ class HeurisitcsPlayer(Player):
         super(HeurisitcsPlayer, self).__init__(workers, color, report_move_summary=True)
 
     def _get_worker_move(self, board):
+        '''
+        Pick a valid, optimal worker to move and a valid, optimal direction to move in.
+        '''
         valid_moves_dict = self.player_move_actions(board)
         optimal_worker = None
         optimal_move_direction = None
@@ -228,7 +194,7 @@ class HeurisitcsPlayer(Player):
 
                 # check if move would end game
                 if board.get_building_height_of_worker(worker) == 3:
-                    reverse_move = MoveUtil(worker, move).reverse_move()
+                    reverse_move = reverse_direction(move)
                     board.move_worker(worker, reverse_move)
                     return worker, move
                 
@@ -245,13 +211,15 @@ class HeurisitcsPlayer(Player):
                     ])
 
                 # reverse the hypothetical move
-                reverse_move = MoveUtil(worker, move).reverse_move()
+                reverse_move = reverse_direction(move)
                 board.move_worker(worker, reverse_move)
 
         return optimal_worker, optimal_move_direction
             
     def _get_build_direction(self, board, worker):
-        # Same as RandomPlayer
+        '''
+        Same method as RandomPlayer
+        '''
         valid_builds = board.get_valid_builds(worker)
         return random.choice(valid_builds)
 

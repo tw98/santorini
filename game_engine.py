@@ -1,11 +1,13 @@
+from turn import Turn
 from players import PlayerFactory
 from board import Board
 import heuristics as h
+from utils import UNDO, REDO, NEXT, reverse_direction
 
 class GameEngine:
     def __init__(self, player1_type, player2_type, undo_redo, enable_score) -> None:
         self._turn = 1
-        self._history = {}
+        self._history = []
         player_factory = PlayerFactory()
 
         self._player_pieces = {
@@ -23,9 +25,9 @@ class GameEngine:
         self._current_player = None
 
         # game settings
-        self.undo_redo = False
+        self._undo_redo = False
         if undo_redo == 'on':
-            self.undo_redo = True
+            self._undo_redo = True
 
         self._enable_score = False
         if enable_score == 'on':
@@ -44,6 +46,9 @@ class GameEngine:
 
     def _increment_turn(self):
         self._turn += 1
+
+    def _decrement_turn(self):
+        self._turn -= 1
 
     def _game_is_over(self):
         '''
@@ -77,17 +82,48 @@ class GameEngine:
         output = f'Turn: {self._turn}, {color} ({workers})'
 
         if self._enable_score:
-            height_score = h.height_score(self.board, self._current_player)
-            center_score = h.center_score(self.board, self._current_player)
-            dist_score = h.distance_score(self.board, self._current_player)
+            height_score = h.height_score(self.board, self._current_player.workers)
+            center_score = h.center_score(self.board, self._current_player.workers)
+            dist_score = h.distance_score(self.board, self._current_player.workers)
             output += f', ({height_score}, {center_score}, {dist_score})'
         print(output)
 
-    def _undo_move(self):
-        return False
+    def _undo_turn(self):
+        prev_turn = self._history[self._turn-2]
+        # prev_turn.turn_type = UNDO
+        reverse_move = reverse_direction(prev_turn.move)
+        reverse_build = reverse_direction(prev_turn.build)
+        self.board.decrement_building_height(prev_turn.worker, reverse_build)
+        self.board.move_worker(prev_turn.worker, reverse_move)
+        self._decrement_turn()
 
-    def _redo_move(self):
-        return False
+    def _redo_turn(self):
+        prev_turn = self._history[self._turn-1]
+        # prev_turn.turn_type = NEXT
+        self.board.move_worker(prev_turn.worker, prev_turn.move)
+        self.board.increment_building_height(prev_turn.worker, prev_turn.build)
+        self._increment_turn()
+
+    def _next_turn(self):
+        worker, move_dir, build_dir = self._current_player.make_move(self.board)
+        turn = Turn(self._turn, NEXT, worker, move_dir, build_dir)
+        self._history.append(turn)
+        self._increment_turn()
+
+    def _get_undo_redo_next(self):
+        while True:
+            choice = input("undo, redo, or next\n")
+            if choice in [UNDO, REDO, NEXT]:
+                return choice
+            else:
+                print("That is not a valid choice")
+
+    def _flush_game_history(self):
+        '''
+        Delete any invalidated moves.
+        '''
+        if self._turn != len(self._history):
+            self._history = self._history[:self._turn]
 
     def run(self):
         self._setup()
@@ -100,11 +136,22 @@ class GameEngine:
             if self._game_is_over():
                 break
 
-            move = self._current_player.make_move(self.board)
-            
-            # self.board.update_worker_position(worker, mv_d)
-            # self._current_player.bu
-            # # self.save_move(move)
+            if self._undo_redo:
+                turn_type = self._get_undo_redo_next()
+                if turn_type == NEXT:
+                    self._flush_game_history()
+                    self._next_turn()
+                elif turn_type == UNDO:
+                    if self._turn == 1:
+                        continue
+                    self._undo_turn()
+                elif turn_type == REDO:
+                    # if history is empty or game state is at latest turn
+                    if self._turn >= len(self._history):
+                        continue
+                    self._redo_turn()
+            else:
+                self._next_turn()
 
-            self._increment_turn()
+            # self._increment_turn()
         
