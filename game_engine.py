@@ -1,4 +1,5 @@
 from turn import Turn
+from memento import Caretaker
 from players import PlayerFactory
 from board import Board
 import heuristics as h
@@ -32,6 +33,8 @@ class GameEngine:
         self._enable_score = False
         if enable_score == 'on':
             self._enable_score = True
+
+        self._caretaker = Caretaker(self.board)
 
 
     def _setup(self):
@@ -89,25 +92,16 @@ class GameEngine:
         print(output)
 
     def _undo_turn(self):
-        prev_turn = self._history[self._turn-2]
-        # prev_turn.turn_type = UNDO
-        reverse_move = reverse_direction(prev_turn.move)
-        reverse_build = reverse_direction(prev_turn.build)
-        self.board.decrement_building_height(prev_turn.worker, reverse_build)
-        self.board.move_worker(prev_turn.worker, reverse_move)
-        self._decrement_turn()
+        if self._caretaker.undo():
+            self._decrement_turn()
 
     def _redo_turn(self):
-        prev_turn = self._history[self._turn-1]
-        # prev_turn.turn_type = NEXT
-        self.board.move_worker(prev_turn.worker, prev_turn.move)
-        self.board.increment_building_height(prev_turn.worker, prev_turn.build)
-        self._increment_turn()
+        if self._caretaker.redo():
+            self._increment_turn()
 
     def _next_turn(self):
         worker, move_dir, build_dir = self._current_player.make_move(self.board)
-        turn = Turn(self._turn, NEXT, worker, move_dir, build_dir)
-        self._history.append(turn)
+        self._caretaker.backup(worker, move_dir, build_dir)
         self._increment_turn()
 
     def _get_undo_redo_next(self):
@@ -142,13 +136,8 @@ class GameEngine:
                     self._flush_game_history()
                     self._next_turn()
                 elif turn_type == UNDO:
-                    if self._turn == 1:
-                        continue
                     self._undo_turn()
                 elif turn_type == REDO:
-                    # if history is empty or game state is at latest turn
-                    if self._turn >= len(self._history):
-                        continue
                     self._redo_turn()
             else:
                 self._next_turn()
