@@ -19,10 +19,10 @@ class Player:
     DESIGN PATTERN: TEMPLATE
     '''
 
-    def __init__(self, workers, color) -> None:
+    def __init__(self, workers, color, report_move_summary=False) -> None:
         self.workers = workers
         self.color = color
-        self.report_move_summary = True
+        self.report_move_summary = report_move_summary
 
     def has_worker(self, worker):
         return worker in self.workers
@@ -53,7 +53,7 @@ class Player:
         build_d = self._get_build_direction(board, worker)
         board.increment_building_height(worker, build_d)
 
-        # debugging
+        # print move summary if non-human player
         if self.report_move_summary:
             print(f'{worker},{mv_d},{build_d}')
         return Move(worker, mv_d, build_d)
@@ -84,7 +84,6 @@ class PlayerFactory():
 class HumanPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(HumanPlayer, self).__init__(workers, color)
-        self.report_move_summary = False
 
     # def is_valid_move_direction(self, d, board, worker):
     #     '''
@@ -163,7 +162,7 @@ class HumanPlayer(Player):
 ###
 class RandomPlayer(Player):
     def __init__(self, workers, color) -> None:
-        super(RandomPlayer, self).__init__(workers, color)
+        super(RandomPlayer, self).__init__(workers, color, report_move_summary=True)
 
     def _get_worker_move(self, board):
         '''
@@ -188,10 +187,34 @@ class RandomPlayer(Player):
 
 class HeurisitcsPlayer(Player):
     def __init__(self, workers, color) -> None:
-        super(HeurisitcsPlayer, self).__init__(workers, color)
+        super(HeurisitcsPlayer, self).__init__(workers, color, report_move_summary=True)
 
     def _get_worker_move(self, board):
-        pass
+        valid_moves_dict = self.player_move_actions(board)
+        optimal_worker = None
+        optimal_move_direction = None
+        best_move_score = float('-inf')
+        # for each worker
+        for worker in valid_moves_dict.keys:
+            # for each move
+            for move in valid_moves_dict[worker]:
+                # check if move would end game
+                if board.get_building_height_in_direction(worker, move) == 3:
+                    return worker, move
+                # calculate move score
+                move_score = heuristics.move_score(worker, move, board, self.workers)
+                if move_score > best_move_score:
+                    optimal_worker = worker
+                    optimal_move_direction = move
+                elif move_score == best_move_score:
+                    optimal_worker, optimal_move_direction = random.choice([
+                        (optimal_worker, optimal_move_direction),
+                        (worker, move)
+                    ])
+
+        return optimal_worker, optimal_move_direction
+            
+        
 
     def _get_build_direction(self, board, worker):
         pass
