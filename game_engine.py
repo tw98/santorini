@@ -1,5 +1,6 @@
 from players import PlayerFactory
 from board import Board
+import heuristics as h
 
 class GameEngine:
     def __init__(self, player1_type, player2_type, undo_redo, enable_score) -> None:
@@ -22,8 +23,14 @@ class GameEngine:
         self._current_player = None
 
         # game settings
-        self._undo_redo = undo_redo
-        self._enable_score = enable_score
+        self.undo_redo = False
+        if undo_redo == 'on':
+            self.undo_redo = True
+
+        self._enable_score = False
+        if enable_score == 'on':
+            self._enable_score = True
+
 
     def _setup(self):
         '''
@@ -66,7 +73,15 @@ class GameEngine:
         self.board.display()
         color = self._current_player.color
         workers = ''.join(self._current_player.workers)
-        print(f'Turn: {self._turn}, {color} ({workers})')
+
+        output = f'Turn: {self._turn}, {color} ({workers})'
+
+        if self._enable_score:
+            height_score = h.height_score(self.board, self._current_player)
+            center_score = h.center_score(self.board, self._current_player)
+            dist_score = h.distance_score(self.board, self._current_player)
+            output += f', ({height_score}, {center_score}, {dist_score})'
+        print(output)
 
     def _undo_move(self):
         return False

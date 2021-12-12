@@ -4,13 +4,39 @@ import random
 DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
 
 
+class MoveUtil:
+    def __init__(self, worker, move_direction) -> None:
+        self.worker = worker
+        self.move_direction = move_direction
+        # self.build_direction = build_direction
+
+    def reverse_move(self):
+        reverse_dir = {
+            'n': 's', 'ne': 'sw', 'e': 'w', 'se': 'nw', 
+            's': 'n', 'sw': 'ne', 'w': 'e', 'nw': 'se'
+            }
+
+        reverse_mov_d = reverse_dir[self.move_direction]
+        # reverse_build_d = reverse_dir[self.build_direction]
+        
+        return reverse_mov_d #, reverse_build_d
+
 class Move:
-    def __init__(self, worker, move_direction, build_direction, is_human=False) -> None:
+    def __init__(self, worker, move_direction, build_direction) -> None:
         self.worker = worker
         self.move_direction = move_direction
         self.build_direction = build_direction
-        self.human_move = is_human
 
+    def reverse_move(self):
+        reverse_dir = {
+            'n': 's', 'ne': 'sw', 'e': 'w', 'se': 'nw', 
+            's': 'n', 'sw': 'ne', 'w': 'e', 'nw': 'se'
+            }
+
+        reverse_mov_d = reverse_dir[self.move_direction]
+        reverse_build_d = reverse_dir[self.build_direction]
+        
+        return reverse_mov_d, reverse_build_d
 
 ######### Player class & subclasses #########
 
@@ -194,28 +220,38 @@ class HeurisitcsPlayer(Player):
         optimal_worker = None
         optimal_move_direction = None
         best_move_score = float('-inf')
-        # for each worker
-        for worker in valid_moves_dict.keys:
-            # for each move
+
+        for worker in valid_moves_dict:
             for move in valid_moves_dict[worker]:
+                # make the hypothetical move
+                board.move_worker(worker, move)
+
                 # check if move would end game
-                if board.get_building_height_in_direction(worker, move) == 3:
+                if board.get_building_height_of_worker(worker) == 3:
+                    reverse_move = MoveUtil(worker, move).reverse_move()
+                    board.move_worker(worker, reverse_move)
                     return worker, move
+                
                 # calculate move score
-                move_score = heuristics.move_score(worker, move, board, self.workers)
+                move_score = heuristics.move_score(board, self.workers)
                 if move_score > best_move_score:
                     optimal_worker = worker
                     optimal_move_direction = move
+                    best_move_score = move_score
                 elif move_score == best_move_score:
                     optimal_worker, optimal_move_direction = random.choice([
                         (optimal_worker, optimal_move_direction),
                         (worker, move)
                     ])
 
+                # reverse the hypothetical move
+                reverse_move = MoveUtil(worker, move).reverse_move()
+                board.move_worker(worker, reverse_move)
+
         return optimal_worker, optimal_move_direction
             
-        
-
     def _get_build_direction(self, board, worker):
-        pass
+        # Same as RandomPlayer
+        valid_builds = board.get_valid_builds(worker)
+        return random.choice(valid_builds)
 
