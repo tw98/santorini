@@ -19,8 +19,8 @@ class GameEngine:
         ]
         self._current_player = None
 
-        self.board = Board()
-        self._history = History(self.board)
+        self._board = Board()
+        self._history = History(self._board)
 
         # game settings
         self._undo_redo = False
@@ -39,7 +39,7 @@ class GameEngine:
         player1_worker2 = self._players[0].workers[1]
         player2_worker1 = self._players[1].workers[0]
         player2_worker2 = self._players[1].workers[1]
-        self.board.setup(player1_worker1, player1_worker2, player2_worker1, player2_worker2)
+        self._board.setup(player1_worker1, player1_worker2, player2_worker1, player2_worker2)
 
     def _increment_turn(self):
         self._turn += 1
@@ -52,7 +52,7 @@ class GameEngine:
         Check to see if the game is over according to game rules
         '''
         # game winning position
-        winning_worker = self.board.check_game_winning_position()
+        winning_worker = self._board.check_game_winning_position()
         if winning_worker:
             for player in self._players:
                 if winning_worker in player.workers:
@@ -61,7 +61,7 @@ class GameEngine:
             print('ERROR: should never get here')
 
         # check if current player doesn't have any actions to move
-        if self._current_player and self._current_player.has_moves(self.board):
+        if self._current_player and self._current_player.has_moves(self._board):
             print(f'{self._players[self._turn%2].color} has won')
             return True
 
@@ -71,16 +71,16 @@ class GameEngine:
         '''
         Display the current state of the board, turn number, and player turn
         '''
-        self.board.display()
+        self._board.display()
         color = self._current_player.color
         workers = ''.join(self._current_player.workers)
 
         output = f'Turn: {self._turn}, {color} ({workers})'
 
         if self._enable_score:
-            height_score = h.height_score(self.board, self._current_player.workers)
-            center_score = h.center_score(self.board, self._current_player.workers)
-            dist_score = h.distance_score(self.board, self._current_player.workers)
+            height_score = h.height_score(self._board, self._current_player.workers)
+            center_score = h.center_score(self._board, self._current_player.workers)
+            dist_score = h.distance_score(self._board, self._current_player.workers)
             output += f', ({height_score}, {center_score}, {dist_score})'
         print(output)
 
@@ -104,7 +104,7 @@ class GameEngine:
             self._increment_turn()
 
     def _next_turn(self):
-        worker, move_dir, build_dir = self._current_player.make_move(self.board)
+        worker, move_dir, build_dir = self._current_player.make_move(self._board)
         self._history.backup(worker, move_dir, build_dir)
         self._increment_turn()
 

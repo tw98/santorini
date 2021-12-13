@@ -2,6 +2,25 @@ import heuristics
 import random
 from utils import DIRECTIONS, reverse_direction
 
+class PlayerFactory():
+    '''
+    ABSTRACT FACTORY DESIGN PATTERN
+    '''
+    def __init__(self) -> None:
+        return
+
+    def create_player(self, type, workers, color):
+        if type == 'human':
+            return HumanPlayer(workers, color)
+        elif type == 'random':
+            return RandomPlayer(workers, color)
+        elif type == 'heuristic':
+            return HeurisitcsPlayer(workers, color)
+        else:
+            print('Invalid type')
+            exit(1)
+
+
 class Player:
     '''
     TEMPLATE DESIGN PATTERN
@@ -12,7 +31,7 @@ class Player:
     def __init__(self, workers, color, report_move_summary=False) -> None:
         self.workers = workers
         self.color = color
-        self.report_move_summary = report_move_summary
+        self._report_move_summary = report_move_summary
 
     def _get_all_valid_player_moves(self, board):
         '''
@@ -53,28 +72,9 @@ class Player:
         board.increment_building_height(worker, build_d)
 
         # print move summary if non-human player
-        if self.report_move_summary:
+        if self._report_move_summary:
             print(f'{worker},{mv_d},{build_d}')
         return (worker, mv_d, build_d)
-
-
-class PlayerFactory():
-    '''
-    ABSTRACT FACTORY DESIGN PATTERN
-    '''
-    def __init__(self) -> None:
-        return
-
-    def create_player(self, type, workers, color):
-        if type == 'human':
-            return HumanPlayer(workers, color)
-        elif type == 'random':
-            return RandomPlayer(workers, color)
-        elif type == 'heuristic':
-            return HeurisitcsPlayer(workers, color)
-        else:
-            print('Invalid type')
-            exit(1)
 
 
 class HumanPlayer(Player):
