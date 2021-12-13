@@ -1,29 +1,26 @@
-from turn import Turn
-from memento import Caretaker
+from history import History
 from players import PlayerFactory
 from board import Board
+from utils import UNDO, REDO, NEXT
 import heuristics as h
-from utils import UNDO, REDO, NEXT, reverse_direction
 
 class GameEngine:
     def __init__(self, player1_type, player2_type, undo_redo, enable_score) -> None:
         self._turn = 1
-        self._history = []
-        player_factory = PlayerFactory()
 
+        player_factory = PlayerFactory()
         self._player_pieces = {
             'white': ['A', 'B'],
             'blue': ['Y', 'Z']
         }
-
         self._players = [
             player_factory.create_player(player1_type, self._player_pieces['white'], 'white'),
             player_factory.create_player(player2_type, self._player_pieces['blue'], 'blue')
         ]
+        self._current_player = None
 
         self.board = Board()
-
-        self._current_player = None
+        self._history = History(self.board)
 
         # game settings
         self._undo_redo = False
@@ -33,9 +30,6 @@ class GameEngine:
         self._enable_score = False
         if enable_score == 'on':
             self._enable_score = True
-
-        self._caretaker = Caretaker(self.board)
-
 
     def _setup(self):
         '''
@@ -67,8 +61,7 @@ class GameEngine:
             print('ERROR: should never get here')
 
         # check if current player doesn't have any actions to move
-        if (self._current_player) and (not self._current_player.player_move_actions(self.board)):
-            # if True, opponent player won the game
+        if self._current_player and self._current_player.has_moves(self.board):
             print(f'{self._players[self._turn%2].color} has won')
             return True
 
@@ -91,20 +84,10 @@ class GameEngine:
             output += f', ({height_score}, {center_score}, {dist_score})'
         print(output)
 
-    def _undo_turn(self):
-        if self._caretaker.undo():
-            self._decrement_turn()
-
-    def _redo_turn(self):
-        if self._caretaker.redo():
-            self._increment_turn()
-
-    def _next_turn(self):
-        worker, move_dir, build_dir = self._current_player.make_move(self.board)
-        self._caretaker.backup(worker, move_dir, build_dir)
-        self._increment_turn()
-
     def _get_undo_redo_next(self):
+        '''
+        Get input from the user about the next turn type
+        '''
         while True:
             choice = input("undo, redo, or next\n")
             if choice in [UNDO, REDO, NEXT]:
@@ -112,12 +95,18 @@ class GameEngine:
             else:
                 print("That is not a valid choice")
 
-    def _flush_game_history(self):
-        '''
-        Delete any invalidated moves.
-        '''
-        if self._turn != len(self._history):
-            self._history = self._history[:self._turn]
+    def _undo_turn(self):
+        if self._history.undo():
+            self._decrement_turn()
+
+    def _redo_turn(self):
+        if self._history.redo():
+            self._increment_turn()
+
+    def _next_turn(self):
+        worker, move_dir, build_dir = self._current_player.make_move(self.board)
+        self._history.backup(worker, move_dir, build_dir)
+        self._increment_turn()
 
     def run(self):
         self._setup()
@@ -133,7 +122,6 @@ class GameEngine:
             if self._undo_redo:
                 turn_type = self._get_undo_redo_next()
                 if turn_type == NEXT:
-                    self._flush_game_history()
                     self._next_turn()
                 elif turn_type == UNDO:
                     self._undo_turn()
@@ -142,5 +130,4 @@ class GameEngine:
             else:
                 self._next_turn()
 
-            # self._increment_turn()
         

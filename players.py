@@ -4,18 +4,17 @@ from utils import DIRECTIONS, reverse_direction
 
 class Player:
     '''
-    DESIGN PATTERN: TEMPLATE
-    '''
+    TEMPLATE DESIGN PATTERN
 
+    Define a common set of methods, but require subclasses to define certain
+    substeps of other processes.
+    '''
     def __init__(self, workers, color, report_move_summary=False) -> None:
         self.workers = workers
         self.color = color
         self.report_move_summary = report_move_summary
 
-    def has_worker(self, worker):
-        return worker in self.workers
-
-    def player_move_actions(self, board):
+    def _get_all_valid_player_moves(self, board):
         '''
         Gets a list of valid moves for each of the player's worker,
         according to the current board state
@@ -27,6 +26,17 @@ class Player:
                 moves_dict[worker] = valid_moves
         return moves_dict
 
+    def _get_worker_move(self, board):
+        raise NotImplementedError
+    
+    def _get_build_direction(self, board, worker):
+        raise NotImplementedError
+
+    def has_worker(self, worker):
+        return worker in self.workers
+
+    def has_moves(self, board):
+        return not self._get_all_valid_player_moves(board)
 
     def make_move(self, board):
         '''
@@ -47,14 +57,11 @@ class Player:
             print(f'{worker},{mv_d},{build_d}')
         return (worker, mv_d, build_d)
 
-    def _get_worker_move(self, board):
-        raise NotImplementedError
-    
-    def _get_build_direction(self, board, worker):
-        raise NotImplementedError
-
 
 class PlayerFactory():
+    '''
+    ABSTRACT FACTORY DESIGN PATTERN
+    '''
     def __init__(self) -> None:
         return
 
@@ -74,30 +81,12 @@ class HumanPlayer(Player):
     def __init__(self, workers, color) -> None:
         super(HumanPlayer, self).__init__(workers, color)
 
-    # def is_valid_move_direction(self, d, board, worker):
-    #     '''
-    #     Check that the given direction is valid for the given worker to move
-    #     Use case: Human
-    #     '''
-    #     if d in board.get_valid_moves(worker):
-    #         return True
-    #     return False
-
-    def _is_valid_build_direction(self, d, board, worker):
-        '''
-        Check that the given direction is valid for the given worker to build
-        Use case: Human
-        '''
-        if d in board.get_valid_builds(worker):
-            return True
-        return False
-
     def _get_worker_move(self, board):
         '''
         Pick a valid worker to move and a valid direction to move in.
         Repeats prompts until input is valid.
         '''
-        valid_moves_dict = self.player_move_actions(board)
+        valid_moves_dict = self._get_all_valid_player_moves(board)
         
         # pick worker
         while True:
@@ -121,9 +110,7 @@ class HumanPlayer(Player):
             choice_direction = input("Select a direction to move (n, ne, e, se, s, sw, w, nw)\n")
             if choice_direction not in DIRECTIONS:
                 print("Not a valid direction")
-
             elif choice_direction in valid_moves_dict[choice_worker]:
-                # board.is_valid_move_direction(choice_direction, choice_worker):
                 break
             else:
                 print("Cannot move {0}".format(choice_direction))
@@ -139,7 +126,7 @@ class HumanPlayer(Player):
             choice = input("Select a direction to build (n, ne, e, se, s, sw, w, nw)\n")
             if choice not in DIRECTIONS:
                 print("Not a valid direction")
-            elif self._is_valid_build_direction(choice, board, worker):
+            elif choice in board.get_valid_builds(worker):
                 return choice
             else:
                 print("Cannot build {0}".format(choice))
@@ -158,7 +145,7 @@ class RandomPlayer(Player):
         Pick a valid worker to move and a valid direction to move in.
         Picks randomly among computed valid choices.
         '''
-        moves_dict = self.player_move_actions(board)
+        moves_dict = self._get_all_valid_player_moves(board)
 
         valid_workers = list(moves_dict.keys())
         worker = random.choice(valid_workers)
@@ -182,7 +169,7 @@ class HeurisitcsPlayer(Player):
         '''
         Pick a valid, optimal worker to move and a valid, optimal direction to move in.
         '''
-        valid_moves_dict = self.player_move_actions(board)
+        valid_moves_dict = self._get_all_valid_player_moves(board)
         optimal_worker = None
         optimal_move_direction = None
         best_move_score = float('-inf')

@@ -17,4 +17,3 @@ REVERSE_DIRECTIONS = {
 
 def reverse_direction(direction):
     return REVERSE_DIRECTIONS[direction]
-
