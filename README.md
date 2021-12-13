@@ -15,6 +15,6 @@ ex. History class (Caretaker) keeps track of Turn objects (Mementos).
 
 ex. Player class is a template for Human/AI subclasses to finish defining substeps of a commonly defined process.
 
-4. 
+4. Strategy pattern
 
-ex.
+ex. The set of heuristics functions follow the strategy pattern. All three function have a common interface and implement different solutions for the same problem, e.g. evaluate the current position of the worker on the board. 
